@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vaultline — Secure Access</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #12161c;
+    --panel: #1b212b;
+    --panel-raised: #212836;
+    --brass: #c9a227;
+    --brass-dim: #8a7220;
+    --bone: #ede6d6;
+    --muted: #7e8798;
+    --ok: #5c8a68;
+    --err: #b1543f;
+    --radius: 3px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--ink);
+    color: var(--bone);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+
+  body {
+    background-image:
+      radial-gradient(circle at 50% 0%, rgba(201,162,39,0.06), transparent 60%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+  }
+
+  .stage {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 18px;
+    color: var(--brass);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  .eyebrow::before, .eyebrow::after {
+    content: "";
+    height: 1px;
+    width: 28px;
+    background: var(--brass-dim);
+    opacity: 0.6;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid #2c3442;
+    border-radius: var(--radius);
+    padding: 40px 36px 34px;
+    position: relative;
+    box-shadow: 0 30px 60px -25px rgba(0,0,0,0.6);
+  }
+
+  .card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1px solid rgba(201,162,39,0.15);
+    border-radius: var(--radius);
+    margin: 6px;
+    pointer-events: none;
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 28px;
+    line-height: 1.15;
+    margin: 0 0 8px;
+    text-align: center;
+    letter-spacing: -0.01em;
+  }
+
+  .sub {
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0 0 30px;
+  }
+
+  .sub strong { color: var(--bone); font-weight: 500; }
+
+  /* --- Dial (identifier step) --- */
+  label {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    background: var(--ink);
+    border: 1px solid #333d4d;
+    border-radius: var(--radius);
+    color: var(--bone);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    padding: 13px 14px;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+
+  input[type="text"]:focus {
+    border-color: var(--brass);
+  }
+
+  input[type="text"]::placeholder { color: #4b5567; }
+
+  .btn {
+    width: 100%;
+    margin-top: 20px;
+    background: var(--brass);
+    color: #1a1204;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 13px 14px;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+    letter-spacing: 0.01em;
+  }
+
+  .btn:hover { background: #ddb32e; }
+  .btn:active { transform: scale(0.99); }
+  .btn:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
+
+  .btn.ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid #333d4d;
+    font-weight: 500;
+  }
+  .btn.ghost:hover { color: var(--bone); border-color: #4b5567; background: transparent; }
+
+  /* --- Wheels (OTP entry step) --- */
+  .wheels {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin: 4px 0 6px;
+  }
+
+  .wheel {
+    width: 46px;
+    height: 58px;
+    background: var(--ink);
+    border: 1px solid #333d4d;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--bone);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .wheel::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: rgba(0,0,0,0.4);
+  }
+
+  .wheel.filled { border-color: var(--brass-dim); }
+  .wheel.active { border-color: var(--brass); box-shadow: 0 0 0 3px rgba(201,162,39,0.12); }
+
+  .wheels.shake { animation: shake 0.4s ease; }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(7px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(4px); }
+  }
+
+  #hidden-otp-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    height: 1px; width: 1px;
+  }
+
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 18px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .meta-row .timer { color: var(--bone); }
+  .meta-row .timer.low { color: var(--err); }
+
+  .resend {
+    background: none;
+    border: none;
+    color: var(--brass);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 0;
+  }
+  .resend:disabled { color: var(--muted); cursor: default; }
+
+  .status-line {
+    min-height: 18px;
+    text-align: center;
+    font-size: 13px;
+    margin-top: 16px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .status-line.err { color: var(--err); }
+  .status-line.ok { color: var(--ok); }
+
+  /* --- Dev console (demo aid, clearly labeled) --- */
+  .devnote {
+    margin-top: 26px;
+    border-top: 1px dashed #333d4d;
+    padding-top: 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.6;
+  }
+  .devnote .code {
+    color: var(--brass);
+    font-size: 15px;
+    letter-spacing: 0.3em;
+    display: block;
+    margin-top: 4px;
+  }
+
+  /* --- Success step --- */
+  .success-mark {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    border: 2px solid var(--ok);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes pop {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .step { display: none; }
+  .step.visible { display: block; }
+
+  footer {
+    text-align: center;
+    margin-top: 22px;
+    color: #4b5567;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+
+  @media (max-width: 400px) {
+    .card { padding: 30px 22px 26px; }
+    .wheel { width: 40px; height: 52px; font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="eyebrow">Vaultline</div>
+
+  <div class="card">
+
+    <!-- STEP 1: request code -->
+    <div class="step visible" id="step-request">
+      <h1>Secure access</h1>
+      <p class="sub">Enter your email to receive a one-time code.</p>
+      <label for="identifier">Email address</label>
+      <input type="text" id="identifier" placeholder="you@example.com" autocomplete="email">
+      <button class="btn" id="btn-send">Send code</button>
+      <div class="status-line" id="status-request"></div>
+    </div>
+
+    <!-- STEP 2: enter code -->
+    <div class="step" id="step-verify">
+      <h1>Enter your code</h1>
+      <p class="sub">A 6-digit code was sent to <strong id="verify-target">—</strong></p>
+
+      <div class="wheels" id="wheels">
+        <div class="wheel" data-i="0"></div>
+        <div class="wheel" data-i="1"></div>
+        <div class="wheel" data-i="2"></div>
+        <div class="wheel" data-i="3"></div>
+        <div class="wheel" data-i="4"></div>
+        <div class="wheel" data-i="5"></div>
+      </div>
+      <input id="hidden-otp-input" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
+
+      <div class="meta-row">
+        <span id="attempts-left">3 attempts left</span>
+        <span class="timer" id="timer">05:00</span>
+      </div>
+
+      <button class="btn" id="btn-verify" style="margin-top:22px;">Verify</button>
+      <button class="btn ghost" id="btn-resend" style="margin-top:10px;">Resend code</button>
+
+      <div class="status-line" id="status-verify"></div>
+
+      <div class="devnote" id="devnote">
+        Code sent to your inbox via the local API.<br>
+        API: <span id="api-status">checking…</span>
+      </div>
+    </div>
+
+    <!-- STEP 3: success -->
+    <div class="step" id="step-success">
+      <div class="success-mark">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M4 12.5L9.5 18L20 6" stroke="#5c8a68" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h1>Access granted</h1>
+      <p class="sub">Signed in as <strong id="success-target">—</strong></p>
+      <button class="btn ghost" id="btn-reset">Sign out</button>
+    </div>
+
+  </div>
+
+  <footer>256-bit demo · self-expiring codes · no data leaves this page</footer>
+</div>
+
+<script>
+(function () {
+  const API_BASE = 'http://localhost:5000';
+
+  const state = {
+    identifier: '',
+    expiresAt: 0,
+    attemptsLeft: 3,
+    timerInterval: null,
+  };
+
+  const stepRequest = document.getElementById('step-request');
+  const stepVerify = document.getElementById('step-verify');
+  const stepSuccess = document.getElementById('step-success');
+
+  const identifierInput = document.getElementById('identifier');
+  const btnSend = document.getElementById('btn-send');
+  const statusRequest = document.getElementById('status-request');
+
+  const verifyTarget = document.getElementById('verify-target');
+  const wheels = document.querySelectorAll('.wheel');
+  const wheelsWrap = document.getElementById('wheels');
+  const hiddenInput = document.getElementById('hidden-otp-input');
+  const attemptsLeftEl = document.getElementById('attempts-left');
+  const timerEl = document.getElementById('timer');
+  const btnVerify = document.getElementById('btn-verify');
+  const btnResend = document.getElementById('btn-resend');
+  const statusVerify = document.getElementById('status-verify');
+  const apiStatus = document.getElementById('api-status');
+
+  const successTarget = document.getElementById('success-target');
+  const btnReset = document.getElementById('btn-reset');
+
+  function showStep(step) {
+    [stepRequest, stepVerify, stepSuccess].forEach(s => s.classList.remove('visible'));
+    step.classList.add('visible');
+  }
+
+  function checkApiStatus() {
+    fetch(API_BASE + '/send-otp', { method: 'OPTIONS' })
+      .then(() => { apiStatus.textContent = 'connected'; apiStatus.style.color = 'var(--ok)'; })
+      .catch(() => { apiStatus.textContent = 'not running — start server.py'; apiStatus.style.color = 'var(--err)'; });
+  }
+  checkApiStatus();
+
+  function isValidEmail(v) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  }
+
+  function startTimer() {
+    clearInterval(state.timerInterval);
+    state.timerInterval = setInterval(() => {
+      const remaining = Math.max(0, Math.round((state.expiresAt - Date.now()) / 1000));
+      const m = String(Math.floor(remaining / 60)).padStart(2, '0');
+      const s = String(remaining % 60).padStart(2, '0');
+      timerEl.textContent = `${m}:${s}`;
+      timerEl.classList.toggle('low', remaining <= 30);
+      if (remaining <= 0) {
+        clearInterval(state.timerInterval);
+        statusVerify.textContent = 'Code expired. Request a new one.';
+        statusVerify.className = 'status-line err';
+        btnVerify.disabled = true;
+      }
+    }, 250);
+  }
+
+  function requestOtp(identifier) {
+    btnSend.disabled = true;
+    btnSend.textContent = 'Sending…';
+    statusRequest.textContent = '';
+    statusRequest.className = 'status-line';
+
+    fetch(API_BASE + '/send-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: identifier }),
+    })
+      .then(res => res.json().then(data => ({ ok: res.ok, data })))
+      .then(({ ok, data }) => {
+        btnSend.disabled = false;
+        btnSend.textContent = 'Send code';
+        if (!ok || !data.success) {
+          statusRequest.textContent = data.message || 'Could not send code.';
+          statusRequest.className = 'status-line err';
+          return;
+        }
+        state.identifier = identifier;
+        state.expiresAt = Date.now() + (data.expires_in || 300) * 1000;
+        state.attemptsLeft = 3;
+
+        verifyTarget.textContent = identifier;
+        attemptsLeftEl.textContent = '3 attempts left';
+        statusVerify.textContent = '';
+        statusVerify.className = 'status-line';
+        btnVerify.disabled = false;
+        hiddenInput.value = '';
+        renderWheels('');
+        startTimer();
+        showStep(stepVerify);
+        hiddenInput.focus();
+      })
+      .catch(() => {
+        btnSend.disabled = false;
+        btnSend.textContent = 'Send code';
+        statusRequest.textContent = 'Server unreachable. Is server.py running?';
+        statusRequest.className = 'status-line err';
+      });
+  }
+
+  function renderWheels(value) {
+    wheels.forEach((w, i) => {
+      const digit = value[i];
+      w.textContent = digit || '';
+      w.classList.toggle('filled', Boolean(digit));
+      w.classList.toggle('active', i === value.length);
+    });
+  }
+
+  btnSend.addEventListener('click', () => {
+    const val = identifierInput.value.trim();
+    if (!isValidEmail(val)) {
+      statusRequest.textContent = 'Enter a valid email address.';
+      statusRequest.className = 'status-line err';
+      return;
+    }
+    statusRequest.textContent = '';
+    requestOtp(val);
+  });
+
+  identifierInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') btnSend.click();
+  });
+
+  wheelsWrap.addEventListener('click', () => hiddenInput.focus());
+
+  hiddenInput.addEventListener('input', () => {
+    const digitsOnly = hiddenInput.value.replace(/\D/g, '').slice(0, 6);
+    hiddenInput.value = digitsOnly;
+    renderWheels(digitsOnly);
+    if (digitsOnly.length === 6) verifyOtp(digitsOnly);
+  });
+
+  function verifyOtp(entered) {
+    const code = entered || hiddenInput.value;
+    if (code.length !== 6) return;
+
+    if (Date.now() > state.expiresAt) {
+      statusVerify.textContent = 'Code expired. Request a new one.';
+      statusVerify.className = 'status-line err';
+      return;
+    }
+
+    btnVerify.disabled = true;
+    btnVerify.textContent = 'Verifying…';
+
+    fetch(API_BASE + '/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: state.identifier, code }),
+    })
+      .then(res => res.json().then(data => ({ ok: res.ok, data })))
+      .then(({ ok, data }) => {
+        btnVerify.textContent = 'Verify';
+        if (ok && data.success) {
+          clearInterval(state.timerInterval);
+          statusVerify.textContent = '';
+          successTarget.textContent = state.identifier;
+          showStep(stepSuccess);
+          return;
+        }
+        btnVerify.disabled = false;
+        if (typeof data.attempts_left === 'number') {
+          attemptsLeftEl.textContent = `${data.attempts_left} attempt${data.attempts_left === 1 ? '' : 's'} left`;
+          if (data.attempts_left <= 0) btnVerify.disabled = true;
+        }
+        statusVerify.textContent = data.message || 'Incorrect code.';
+        statusVerify.className = 'status-line err';
+        wheelsWrap.classList.remove('shake');
+        void wheelsWrap.offsetWidth;
+        wheelsWrap.classList.add('shake');
+        hiddenInput.value = '';
+        renderWheels('');
+      })
+      .catch(() => {
+        btnVerify.disabled = false;
+        btnVerify.textContent = 'Verify';
+        statusVerify.textContent = 'Server unreachable. Is server.py running?';
+        statusVerify.className = 'status-line err';
+      });
+  }
+
+  btnVerify.addEventListener('click', () => verifyOtp());
+
+  btnResend.addEventListener('click', () => {
+    requestOtp(state.identifier);
+    statusVerify.textContent = 'New code sent.';
+    statusVerify.className = 'status-line ok';
+  });
+
+  btnReset.addEventListener('click', () => {
+    identifierInput.value = '';
+    statusRequest.textContent = '';
+    showStep(stepRequest);
+  });
+})();
+</script>
+
+</body>
+</html>
